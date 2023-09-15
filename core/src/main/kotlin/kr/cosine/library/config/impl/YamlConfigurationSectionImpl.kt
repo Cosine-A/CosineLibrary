@@ -1,6 +1,6 @@
-package kr.cosine.library.configuration.impl
+package kr.cosine.library.config.impl
 
-import kr.cosine.library.configuration.YamlConfigurationSection
+import kr.cosine.library.config.YamlConfigurationSection
 import org.spongepowered.configurate.ConfigurationNode
 
 class YamlConfigurationSectionImpl(

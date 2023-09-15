@@ -1,7 +1,7 @@
-package kr.cosine.library.configuration.impl
+package kr.cosine.library.config.impl
 
-import kr.cosine.library.configuration.YamlConfiguration
-import kr.cosine.library.configuration.YamlConfigurationSection
+import kr.cosine.library.config.YamlConfiguration
+import kr.cosine.library.config.YamlConfigurationSection
 import org.spongepowered.configurate.yaml.NodeStyle
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.File

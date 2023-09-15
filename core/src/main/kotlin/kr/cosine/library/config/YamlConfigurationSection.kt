@@ -1,4 +1,4 @@
-package kr.cosine.library.configuration
+package kr.cosine.library.config
 
 interface YamlConfigurationSection {
 

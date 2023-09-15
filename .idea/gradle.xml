@@ -8,6 +8,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/bukkit" />
+            <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/proxy" />
           </set>
         </option>

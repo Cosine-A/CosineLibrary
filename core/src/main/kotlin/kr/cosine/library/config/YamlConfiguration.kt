@@ -1,6 +1,6 @@
-package kr.cosine.library.configuration
+package kr.cosine.library.config
 
-import kr.cosine.library.configuration.impl.YamlConfigurationImpl
+import kr.cosine.library.config.impl.YamlConfigurationImpl
 import java.io.File
 
 interface YamlConfiguration : YamlConfigurationSection {
