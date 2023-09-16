@@ -18,8 +18,7 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = CoroutineName("${this::class.simpleName}CoroutineScope")
 
-    private val config = File(dataFolder, "config.yml").yml
-    val yml get() = config
+    val config = File(dataFolder, "config.yml").yml
 
     open fun onStart() {}
 

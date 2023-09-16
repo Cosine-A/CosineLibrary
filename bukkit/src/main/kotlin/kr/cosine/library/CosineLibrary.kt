@@ -22,8 +22,8 @@ class CosineLibrary : BukkitPlugin() {
     }
 
     private fun setupDatabase() {
-        if (yml.getBoolean("mysql.enabled")) {
-            val newDataSource = DataSource(yml)
+        if (config.getBoolean("mysql.enabled")) {
+            val newDataSource = DataSource(config)
             newDataSource.connect()
             logger.info("Database is connected.", LogColor.GREEN)
             dataSource = newDataSource
