@@ -4,6 +4,8 @@ api-version: 1.13
 main: kr.cosine.library.CosineLibrary
 authors: [ Cosine_A ]
 libraries:
+  - "com.zaxxer:HikariCP:5.0.1"
+  - "org.reflections:reflections:0.10.2"
   - "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
   - "org.jetbrains.kotlin:kotlin-reflect:1.8.0"
   - "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"

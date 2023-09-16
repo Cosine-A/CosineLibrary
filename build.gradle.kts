@@ -25,6 +25,8 @@ subprojects {
     }
 
     dependencies {
+        api("com.zaxxer", "HikariCP", "5.0.1")
+        api("org.reflections", "reflections", "0.10.2")
         api("org.yaml", "snakeyaml", "2.0")
         api("org.spongepowered", "configurate-yaml", "4.1.2")
 
@@ -45,16 +47,19 @@ subprojects {
             api(project(":core"))
         }
         configurations.runtimeClasspath.get().apply {
+            exclude("com.zaxxer")
+            exclude("com.mysql")
+            exclude("org.spongepowered")
+            exclude("org.yaml")
+            exclude("org.reflections")
             exclude("org.jetbrains.kotlin")
             exclude("org.jetbrains.kotlinx")
             exclude("org.jetbrains.exposed")
             exclude("org.jetbrains.slf4j")
-            exclude("org.spongepowered")
-            exclude("org.yaml")
         }
         tasks {
             shadowJar {
-                val path = if (subName == "bukkit") "로비1" else "프록시"
+                val path = if (subName == "bukkit") "로비2" else "프록시"
                 archiveFileName.set("${rootProject.name}-$subName-${rootProject.version}.jar")
                 destinationDirectory.set(file("D:\\서버\\1.20.1 - 번지\\$path\\plugins"))
             }

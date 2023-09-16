@@ -1,5 +1,6 @@
 package kr.cosine.library.config
 
+import kr.cosine.library.config.extension.yml
 import net.md_5.bungee.api.plugin.Plugin
 import java.io.File
 
@@ -8,7 +9,7 @@ class ProxyConfig(
 ) {
 
     private var file = File(plugin.dataFolder, "config.yml")
-    private var config = YamlConfiguration.loadConfiguration(file)
+    private var config = file.yml
 
     var isSocketEnabled = false
         private set
