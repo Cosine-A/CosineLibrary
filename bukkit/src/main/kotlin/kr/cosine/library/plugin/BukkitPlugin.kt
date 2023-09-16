@@ -5,13 +5,11 @@ import kr.cosine.library.CosineLibrary
 import kr.cosine.library.config.extension.yml
 import kr.cosine.library.extension.LogColor
 import kr.cosine.library.extension.info
-import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.transactions.TransactionManager
+import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.reflections.Reflections
 import java.io.File
 import kotlin.coroutines.CoroutineContext
 
@@ -56,8 +54,11 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
         tables.forEach { table ->
             val database = CosineLibrary.getDataSource().database
             transaction(database) {
-                SchemaUtils.create(table)
-                logger.info("Table[${table.tableName}] is created.", LogColor.GREEN)
+                val tableName = table.tableName
+                if (!Table(tableName).exists()) {
+                    SchemaUtils.create(table)
+                    logger.info("Table[${tableName}] is created.", LogColor.GREEN)
+                }
             }
         }
     }
