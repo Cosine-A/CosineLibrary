@@ -8,9 +8,16 @@ import kr.cosine.library.plugin.BukkitPlugin
 class CosineLibrary : BukkitPlugin() {
 
     companion object {
-        private lateinit var dataSource: DataSource
+        internal lateinit var plugin: CosineLibrary
+            private set
 
-        fun getDataSource(): DataSource = dataSource
+        private var dataSource: DataSource? = null
+
+        fun getDataSource(): DataSource = dataSource ?: throw NullPointerException("Database is not loaded.")
+    }
+
+    override fun onLoad() {
+        plugin = this
     }
 
     override fun onStart() {
@@ -18,7 +25,7 @@ class CosineLibrary : BukkitPlugin() {
     }
 
     override fun onStop() {
-        dataSource.close()
+        dataSource?.close()
     }
 
     private fun setupDatabase() {

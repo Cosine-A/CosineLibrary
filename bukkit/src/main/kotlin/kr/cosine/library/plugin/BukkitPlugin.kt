@@ -50,6 +50,11 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
     }
 
     protected fun setupTable(vararg tables: Table) {
+        if (!CosineLibrary.plugin.config.getBoolean("mysql.enabled")) {
+            logger.info("Database is not enabled.", LogColor.RED)
+            logger.info("Change 'mysql.enabled' to true in CosineLibrary's config.yml.", LogColor.RED)
+            return
+        }
         tables.forEach { table ->
             val database = CosineLibrary.getDataSource().database
             transaction(database) {
