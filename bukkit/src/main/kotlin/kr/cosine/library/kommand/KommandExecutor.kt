@@ -9,6 +9,11 @@ import kr.cosine.library.kommand.argument.ArgumentRegistry
 import kr.cosine.library.kommand.exception.ArgumentMismatch
 import kr.cosine.library.kommand.language.Language
 import kr.cosine.library.kommand.language.LanguageRegistry
+import kr.cosine.library.kommand.page.PageType
+import net.md_5.bungee.api.chat.ClickEvent
+import net.md_5.bungee.api.chat.HoverEvent
+import net.md_5.bungee.api.chat.TextComponent
+import net.md_5.bungee.api.chat.hover.content.Text
 import org.bukkit.command.*
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
@@ -64,7 +69,26 @@ abstract class KommandExecutor(
             return true
         }
         val language = languageRegistry.getLanguage(sender)
-        val argument = arguments[args[0]] ?: run {
+        val input = args[0]
+        if (input == "help") {
+            if (args.size == 1) {
+                val message = language.getGlobalErrorMessage("input-page").applyColor()
+                sender.sendMessage(message)
+                return true
+            }
+            val page = args[1].toIntOrNull() ?: run {
+                val message = language.getGlobalErrorMessage("only-integer").applyColor()
+                sender.sendMessage(message)
+                return true
+            }
+            if (!printHelp(sender, label, page)) {
+                val message = language.getGlobalErrorMessage("not-exist-page").applyColor()
+                sender.sendMessage(message)
+                return true
+            }
+            return true
+        }
+        val argument = arguments[input] ?: run {
             val message = language.getGlobalErrorMessage("not-exist-command").applyColor()
             sender.sendMessage(message)
             return true
@@ -83,23 +107,71 @@ abstract class KommandExecutor(
     }
 
     open fun runDefaultCommand(sender: CommandSender, label: String) {
-        printHelp(sender, label)
+        printHelp(sender, label, 1)
     }
 
     open fun runDefaultCommand(player: Player, label: String) {
-        printHelp(player, label)
+        printHelp(player, label, 1)
     }
 
-    private fun printHelp(sender: CommandSender, label: String) {
-        sender.sendMessage("─────────────────────────")
-        arguments.values.filter {
+    private fun printHelp(sender: CommandSender, label: String, page: Int): Boolean {
+        val arguments = arguments.values.filter {
             it.hasPermission(sender) && !it.isHide()
         }.sortedBy {
             it.subKommand.priority
-        }.forEach {
+        }
+        val chunkedArguments = arguments.chunked(5)
+
+        val realPage = page - 1
+        val nowPageArguments = chunkedArguments.getOrNull(realPage) ?: return false
+
+        sender.sendMessage("")
+        nowPageArguments.forEach {
             it.printDescription(sender, label)
         }
-        sender.sendMessage("─────────────────────────")
+        val language = languageRegistry.getLanguage(sender)
+        val pageHelper = language.getPageHelper(pluginCommand.name)
+
+        val beforePageElement = pageHelper.getPageElement(PageType.BEFORE)
+        val currentPageElement = pageHelper.getPageElement(PageType.CURRENT)
+        val nextPageElement = pageHelper.getPageElement(PageType.NEXT)
+
+        if (beforePageElement != null && currentPageElement != null && nextPageElement != null) {
+            val beforePageComponent = createPageComponent(
+                beforePageElement.display,
+                beforePageElement.showText,
+                "/$label help ${page - 1}"
+            )
+            val currentPageComponent = createPageComponent(
+                currentPageElement.display
+                    .replace("%current%", "$page")
+                    .replace("%max%", "${chunkedArguments.size}"),
+                currentPageElement.showText
+                    .replace("%current%", "$page")
+            )
+            val nextPageComponent = createPageComponent(
+                nextPageElement.display,
+                nextPageElement.showText,
+                "/$label help ${page + 1}"
+            )
+            val finalComponent = TextComponent().apply {
+                addExtra(beforePageComponent)
+                addExtra(currentPageComponent)
+                addExtra(nextPageComponent)
+            }
+            sender.sendMessage("")
+            sender.spigot().sendMessage(finalComponent)
+        }
+        return true
+    }
+
+    private fun createPageComponent(display: String, showText: String, command: String? = null): TextComponent {
+        return TextComponent(display).apply {
+            hoverEvent = HoverEvent(HoverEvent.Action.SHOW_TEXT, Text(showText))
+            if (command != null) {
+                clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, command)
+            }
+        }
     }
 
     private inner class CommandArgument(
