@@ -1,8 +1,12 @@
 package kr.cosine.library
 
+import kr.cosine.library.command.IntegerArgumentProvider
+import kr.cosine.library.command.StringArgumentProvider
+import kr.cosine.library.command.TestCommand
 import kr.cosine.library.database.DataSource
 import kr.cosine.library.extension.LogColor
 import kr.cosine.library.extension.info
+import kr.cosine.library.kommand.argument.ArgumentRegistry
 import kr.cosine.library.plugin.BukkitPlugin
 
 class CosineLibrary : BukkitPlugin() {
@@ -22,6 +26,9 @@ class CosineLibrary : BukkitPlugin() {
 
     override fun onStart() {
         setupDatabase()
+        ArgumentRegistry.registerArgument(StringArgumentProvider())
+        ArgumentRegistry.registerArgument(IntegerArgumentProvider())
+        TestCommand(this).register()
     }
 
     override fun onStop() {

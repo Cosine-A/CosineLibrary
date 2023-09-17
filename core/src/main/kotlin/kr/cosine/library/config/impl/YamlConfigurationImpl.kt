@@ -35,7 +35,7 @@ class YamlConfigurationImpl : YamlConfiguration {
 
     override fun getKeys(): List<String> = rootSection?.getKeys() ?: emptyList()
 
-    override fun getString(path: String): String? = rootSection?.getString(path)
+    override fun getString(path: String): String = findString(path) ?: ""
 
     override fun getInt(path: String): Int = rootSection?.getInt(path) ?: 0
 
@@ -58,6 +58,8 @@ class YamlConfigurationImpl : YamlConfiguration {
     override fun getFloatList(path: String): List<Float> = rootSection?.getFloatList(path) ?: emptyList()
 
     override fun getDoubleList(path: String): List<Double> = rootSection?.getDoubleList(path) ?: emptyList()
+
+    override fun findString(path: String): String? = rootSection?.findString(path)
 
     override fun set(path: String, value: Any?) {
         rootSection?.set(path, value)

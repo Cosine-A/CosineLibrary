@@ -16,7 +16,7 @@ class YamlConfigurationSectionImpl(
         return rootNode.childrenMap().keys.map(Any::toString)
     }
 
-    override fun getString(path: String): String? = getNode(path).string
+    override fun getString(path: String): String = findString(path) ?: ""
 
     override fun getInt(path: String): Int = getNode(path).int
 
@@ -46,6 +46,8 @@ class YamlConfigurationSectionImpl(
     override fun getFloatList(path: String): List<Float> = getList(path, Float::class.java)
 
     override fun getDoubleList(path: String): List<Double> = getList(path, Double::class.java)
+
+    override fun findString(path: String): String? = getNode(path).string
 
     override fun set(path: String, value: Any?) {
         getNode(path).set(value)

@@ -6,7 +6,7 @@ interface YamlConfigurationSection {
 
     fun getKeys(): List<String>
 
-    fun getString(path: String): String?
+    fun getString(path: String): String
 
     fun getInt(path: String): Int
 
@@ -29,6 +29,8 @@ interface YamlConfigurationSection {
     fun getFloatList(path: String): List<Float>
 
     fun getDoubleList(path: String): List<Double>
+
+    fun findString(path: String): String?
 
     fun set(path: String, value: Any?)
 }
