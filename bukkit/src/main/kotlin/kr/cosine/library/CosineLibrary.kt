@@ -1,6 +1,7 @@
 package kr.cosine.library
 
 import kr.cosine.library.command.IntegerArgumentProvider
+import kr.cosine.library.command.PlayerArgumentProvider
 import kr.cosine.library.command.StringArgumentProvider
 import kr.cosine.library.command.TestCommand
 import kr.cosine.library.database.DataSource
@@ -28,6 +29,7 @@ class CosineLibrary : BukkitPlugin() {
         setupDatabase()
         ArgumentRegistry.registerArgument(StringArgumentProvider())
         ArgumentRegistry.registerArgument(IntegerArgumentProvider())
+        ArgumentRegistry.registerArgument(PlayerArgumentProvider())
         TestCommand(this).register()
     }
 

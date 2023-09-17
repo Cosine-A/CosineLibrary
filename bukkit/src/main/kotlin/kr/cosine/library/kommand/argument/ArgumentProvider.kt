@@ -10,6 +10,7 @@ abstract class ArgumentProvider<T : Any>(
 
     val genericName get() = clazz.simpleName!!.replace("Integer", "Int")
 
+    // throw ArgumentMismatch("error.int")
     abstract fun cast(sender: CommandSender, argument: String?): T
 
     abstract fun getTabComplete(sender: CommandSender, location: Location?): List<String>?

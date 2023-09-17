@@ -15,4 +15,7 @@ libraries:
   - "org.jetbrains.exposed:exposed-java-time:0.41.1"
 
 commands:
-  테스트:
+  처벌:
+    aliases:
+      - punishment
+      - pm
