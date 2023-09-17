@@ -20,7 +20,7 @@ class Language(
     }
 
     fun getGlobalErrorMessage(path: String): String {
-        return config.getString("global.error.$path")
+        return config.getString("global-error.$path")
     }
 
     fun getArgumentErrorMessage(root: String, argument: String, path: String): String {

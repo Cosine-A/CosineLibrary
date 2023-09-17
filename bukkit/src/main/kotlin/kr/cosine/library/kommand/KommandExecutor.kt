@@ -116,21 +116,24 @@ abstract class KommandExecutor(
 
     private fun printHelp(sender: CommandSender, label: String, page: Int): Boolean {
         val arguments = arguments.values.filter {
-            it.hasPermission(sender) && !it.isHide()
+            it.hasPermission(sender).apply {
+                println("[${it.function.name}] hasPermission: $this")
+            } && !it.isHide()
         }.sortedBy {
             it.subKommand.priority
         }
+        println("arguments: $arguments")
         val chunkedArguments = arguments.chunked(5)
 
         val maxPage = chunkedArguments.size
         val realPage = page - 1
         val nowPageArguments = chunkedArguments.getOrNull(realPage) ?: return false
 
+        val language = languageRegistry.getLanguage(sender)
         sender.sendMessage("")
         nowPageArguments.forEach {
-            it.printDescription(sender, label)
+            it.printDescription(sender, label, language)
         }
-        val language = languageRegistry.getLanguage(sender)
         val pageHelper = language.getPageHelper(pluginCommand.name)
 
         val beforePageElement = pageHelper.getPageElement(PageType.BEFORE)
@@ -203,11 +206,13 @@ abstract class KommandExecutor(
         fun isHide(): Boolean = subKommand.hide
 
         fun hasPermission(sender: CommandSender): Boolean {
-            return sender.isOp || subKommand.permission != "" && sender.hasPermission(subKommand.permission)
+            if (!subKommand.isOp) return true
+            if (sender.isOp) return true
+            if (subKommand.permission != "" && sender.hasPermission(subKommand.permission)) return true
+            return false
         }
 
-        fun printDescription(sender: CommandSender, label: String) {
-            val language = languageRegistry.getLanguage(sender)
+        fun printDescription(sender: CommandSender, label: String, language: Language) {
             val rootCommandLabel = pluginCommand.name
             val argumentLabel = subKommand.argument
             val arguments = language.getArguments(rootCommandLabel, argumentLabel).applyColor()

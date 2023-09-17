@@ -4,7 +4,6 @@ package kr.cosine.library.kommand.annotation
 @Retention(AnnotationRetention.RUNTIME)
 annotation class SubKommand(
     val argument: String,
-    val description: String = "",
     val permission: String = "",
     val isOp: Boolean = false,
     val hide: Boolean = false,
