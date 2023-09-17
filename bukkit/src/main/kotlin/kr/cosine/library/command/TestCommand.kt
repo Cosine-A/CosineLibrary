@@ -19,7 +19,7 @@ class TestCommand(plugin: JavaPlugin) : KommandExecutor(plugin) {
         player.sendMessage("입력: ${target.name}, $code, $code2, $code3, ${args.toList()}")
     }
 
-    @SubKommand("a", "", isOp = true, priority = 3)
+    /*@SubKommand("a", "", isOp = true, priority = 3)
     fun a(player: Player, target: Player) {}
 
     @SubKommand("b", "", isOp = true, priority = 4)
@@ -44,5 +44,5 @@ class TestCommand(plugin: JavaPlugin) : KommandExecutor(plugin) {
     fun h(player: Player, target: Player) {}
 
     @SubKommand("i", "", isOp = true, priority = 11)
-    fun i(player: Player, target: Player) {}
+    fun i(player: Player, target: Player) {}*/
 }

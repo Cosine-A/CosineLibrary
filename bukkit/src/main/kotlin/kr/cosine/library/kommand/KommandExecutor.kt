@@ -122,6 +122,7 @@ abstract class KommandExecutor(
         }
         val chunkedArguments = arguments.chunked(5)
 
+        val maxPage = chunkedArguments.size
         val realPage = page - 1
         val nowPageArguments = chunkedArguments.getOrNull(realPage) ?: return false
 
@@ -136,7 +137,7 @@ abstract class KommandExecutor(
         val currentPageElement = pageHelper.getPageElement(PageType.CURRENT)
         val nextPageElement = pageHelper.getPageElement(PageType.NEXT)
 
-        if (beforePageElement != null && currentPageElement != null && nextPageElement != null) {
+        val pageComponent = if (maxPage > 1 && beforePageElement != null && currentPageElement != null && nextPageElement != null) {
             val beforePageComponent = createPageComponent(
                 beforePageElement.display,
                 beforePageElement.showText,
@@ -145,7 +146,7 @@ abstract class KommandExecutor(
             val currentPageComponent = createPageComponent(
                 currentPageElement.display
                     .replace("%current%", "$page")
-                    .replace("%max%", "${chunkedArguments.size}"),
+                    .replace("%max%", "$maxPage"),
                 currentPageElement.showText
                     .replace("%current%", "$page")
             )
@@ -154,13 +155,17 @@ abstract class KommandExecutor(
                 nextPageElement.showText,
                 "/$label help ${page + 1}"
             )
-            val finalComponent = TextComponent().apply {
+            TextComponent().apply {
                 addExtra(beforePageComponent)
                 addExtra(currentPageComponent)
                 addExtra(nextPageComponent)
             }
-            sender.sendMessage("")
-            sender.spigot().sendMessage(finalComponent)
+        } else {
+            null
+        }
+        sender.sendMessage("")
+        if (pageComponent != null) {
+            sender.spigot().sendMessage(pageComponent)
         }
         return true
     }
