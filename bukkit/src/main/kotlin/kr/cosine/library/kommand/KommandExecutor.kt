@@ -229,7 +229,7 @@ abstract class KommandExecutor(
                 sender.sendMessage(message)
                 return
             }
-            if (hasPermission(sender)) {
+            if (!hasPermission(sender)) {
                 val message = language.getGlobalErrorMessage("has-not-permission").applyColor()
                 sender.sendMessage(message)
                 return
