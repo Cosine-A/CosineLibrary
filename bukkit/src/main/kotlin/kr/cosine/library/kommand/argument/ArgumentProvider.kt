@@ -2,16 +2,10 @@ package kr.cosine.library.kommand.argument
 
 import org.bukkit.Location
 import org.bukkit.command.CommandSender
-import kotlin.reflect.KClass
 
-abstract class ArgumentProvider<T : Any>(
-    private val clazz: KClass<T>
-) {
+interface ArgumentProvider<T : Any> {
 
-    val genericName get() = clazz.simpleName!!.replace("Integer", "Int")
+    fun cast(sender: CommandSender, argument: String?): T
 
-    // throw ArgumentMismatch("error.int")
-    abstract fun cast(sender: CommandSender, argument: String?): T
-
-    abstract fun getTabComplete(sender: CommandSender, location: Location?): List<String>?
+    fun getTabComplete(sender: CommandSender, location: Location?): List<String>?
 }

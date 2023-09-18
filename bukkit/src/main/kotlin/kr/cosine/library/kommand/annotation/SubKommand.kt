@@ -7,7 +7,6 @@ annotation class SubKommand(
     val permission: String = "",
     val isOp: Boolean = false,
     val hide: Boolean = false,
-    val async: Boolean = false,
     val priority: Int = 1
 )
 

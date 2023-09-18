@@ -1,6 +1,8 @@
 package kr.cosine.library.command
 
+import kotlinx.coroutines.delay
 import kr.cosine.library.kommand.KommandExecutor
+import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
 import kr.cosine.library.kommand.annotation.SubKommand
 import org.bukkit.entity.Player
@@ -9,13 +11,15 @@ import org.bukkit.plugin.java.JavaPlugin
 @Kommand("처벌")
 class TestCommand(plugin: JavaPlugin) : KommandExecutor(plugin) {
 
+    @BukkitAsync
     @SubKommand("제재", priority = 1)
-    fun test(player: Player, target: Player, code: Int?) {
+    fun test(player: Player, target: Player, code: Int) {
         player.sendMessage("입력: ${target.name}, $code")
     }
 
     @SubKommand("테스트", isOp = true, priority = 2)
-    fun test2(player: Player, target: Player, code: String, code2: String, code3: String, args: Array<String>) {
+    suspend fun test2(player: Player, target: Player, code: String, code2: String, code3: String, args: Array<String>) {
+        delay(1000)
         player.sendMessage("입력: ${target.name}, $code, $code2, $code3, ${args.toList()}")
     }
 

@@ -1,7 +1,12 @@
 package kr.cosine.library.kommand
 
+import com.google.common.reflect.ClassPath
+import com.google.common.reflect.Reflection
+import kotlinx.coroutines.*
 import kr.cosine.library.extension.applyColor
 import kr.cosine.library.extension.async
+import kr.cosine.library.kommand.annotation.Argument
+import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
 import kr.cosine.library.kommand.annotation.SubKommand
 import kr.cosine.library.kommand.argument.ArgumentProvider
@@ -17,16 +22,23 @@ import net.md_5.bungee.api.chat.hover.content.Text
 import org.bukkit.command.*
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
+import org.reflections.Reflections
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
+import java.util.stream.Collectors
+import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.full.valueParameters
-import kotlin.reflect.jvm.javaMethod
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
+
 
 abstract class KommandExecutor(
     private val plugin: JavaPlugin
-) : CommandExecutor, TabCompleter {
+) : CommandExecutor, TabCompleter, CoroutineScope {
+
+    override val coroutineContext: CoroutineContext
+        get() = CoroutineName("${this::class.simpleName}") + Dispatchers.IO
 
     private var pluginCommand: PluginCommand
 
@@ -35,18 +47,23 @@ abstract class KommandExecutor(
     private val languageRegistry: LanguageRegistry
 
     init {
-        val kommand = this::class.annotations.filterIsInstance<Kommand>().firstOrNull()
+        val kommand = this::class.findAnnotation<Kommand>()
             ?: throw NullPointerException("Kommand Annotation is not registered.")
-
-        kommand.let {
+        kommand.also {
             val command = it.command
             pluginCommand = plugin.getCommand(command)
                 ?: throw NullPointerException("$command is not registered in plugin.yml.")
         }
+        ArgumentProvider::class.allSuperclasses.forEach {
+            println("allSuperclasses: ${it.simpleName}")
+        }
+        /*val reflections = Reflections("kr.cosine")
+        reflections.getSubTypesOf(ArgumentProvider::class.java).forEach {
+            println("class: ${it.simpleName}")
+        }*/
         this::class.memberFunctions.filterIsInstance<KFunction<Unit>>().forEach { function ->
-            function.annotations.filterIsInstance<SubKommand>().forEach { subKommand ->
-                arguments[subKommand.argument] = CommandArgument(subKommand, function)
-            }
+            val subKommand = function.findAnnotation<SubKommand>() ?: return@forEach
+            arguments[subKommand.argument] = CommandArgument(subKommand, function)
         }
         val languageFolder = File(plugin.dataFolder, "language")
         languageRegistry = LanguageRegistry(languageFolder)
@@ -116,13 +133,10 @@ abstract class KommandExecutor(
 
     private fun printHelp(sender: CommandSender, label: String, page: Int): Boolean {
         val arguments = arguments.values.filter {
-            it.hasPermission(sender).apply {
-                println("[${it.function.name}] hasPermission: $this")
-            } && !it.isHide()
+            it.hasPermission(sender) && !it.isHide()
         }.sortedBy {
             it.subKommand.priority
         }
-        println("arguments: $arguments")
         val chunkedArguments = arguments.chunked(5)
 
         val maxPage = chunkedArguments.size
@@ -187,17 +201,17 @@ abstract class KommandExecutor(
         val function: KFunction<Unit>
     ) {
 
+        private var isBukkitAsync = function.hasAnnotation<BukkitAsync>()
+
         private val argumentParameters = ArrayList<Pair<ArgumentProvider<*>, Boolean>>()
 
         init {
             function.valueParameters.forEachIndexed { index, parameter ->
-                println("[Before] $index. ${parameter.type.jvmErasure.simpleName}")
                 if (index < 1) return@forEachIndexed
-                println("[After] $index. ${parameter.type.jvmErasure.simpleName}")
 
                 val type = parameter.type
-                val className = type.jvmErasure.simpleName!!//!!.replace("Int", "Integer")
-                val argument = ArgumentRegistry.getArgument(className) ?: return@forEachIndexed
+                val clazz = type.jvmErasure
+                val argument = ArgumentRegistry.getArgument(clazz) ?: return@forEachIndexed
 
                 argumentParameters.add(argument to !type.isMarkedNullable)
             }
@@ -241,8 +255,11 @@ abstract class KommandExecutor(
                     try {
                         pair.first.cast(sender, input)
                     } catch (e: ArgumentMismatch) {
-                        val message = language.getArgumentErrorMessage(pluginCommand.name, subKommand.argument, e.path)
-                            .applyColor()
+                        val message = language.getArgumentErrorMessage(
+                            pluginCommand.name,
+                            subKommand.argument,
+                            e.path
+                        ).applyColor()
                         sender.sendMessage(message)
                         return
                     }
@@ -263,11 +280,18 @@ abstract class KommandExecutor(
                 parameters.add(copyArgs)
             }
             println("parameters: ${parameters.map { if (it is Array<*>) it.toList() else it.toString() }}")
-            if (subKommand.async) {
-                plugin.async { function.javaMethod?.invoke(this@KommandExecutor, sender, *parameters.toTypedArray()) }
-            } else {
-                function.javaMethod?.invoke(this@KommandExecutor, sender, *parameters.toTypedArray())
+            if (function.isSuspend) {
+                println("function call suspend")
+                launch { function.callSuspend(this@KommandExecutor, sender, *parameters.toTypedArray()) }
+                return
             }
+            if (isBukkitAsync) {
+                println("function call bukkit async")
+                plugin.async { function.call(this@KommandExecutor, sender, *parameters.toTypedArray()) }
+                return
+            }
+            println("function call")
+            function.call(this@KommandExecutor, sender, *parameters.toTypedArray())
         }
     }
 }

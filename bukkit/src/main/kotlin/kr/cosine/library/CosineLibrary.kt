@@ -9,6 +9,10 @@ import kr.cosine.library.extension.LogColor
 import kr.cosine.library.extension.info
 import kr.cosine.library.kommand.argument.ArgumentRegistry
 import kr.cosine.library.plugin.BukkitPlugin
+import org.reflections.Reflections
+import org.reflections.scanners.Scanners
+import org.reflections.util.ClasspathHelper
+import org.reflections.util.ConfigurationBuilder
 
 class CosineLibrary : BukkitPlugin() {
 
@@ -27,10 +31,15 @@ class CosineLibrary : BukkitPlugin() {
 
     override fun onStart() {
         setupDatabase()
-        ArgumentRegistry.registerArgument(StringArgumentProvider())
-        ArgumentRegistry.registerArgument(IntegerArgumentProvider())
-        ArgumentRegistry.registerArgument(PlayerArgumentProvider())
-        TestCommand(this).register()
+
+        registerArgumentProvider(
+            StringArgumentProvider(),
+            IntegerArgumentProvider(),
+            PlayerArgumentProvider()
+        )
+        registerCommand(
+            TestCommand(this)
+        )
     }
 
     override fun onStop() {

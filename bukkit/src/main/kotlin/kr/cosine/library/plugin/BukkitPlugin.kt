@@ -5,18 +5,26 @@ import kr.cosine.library.CosineLibrary
 import kr.cosine.library.config.extension.yml
 import kr.cosine.library.extension.LogColor
 import kr.cosine.library.extension.info
+import kr.cosine.library.kommand.KommandExecutor
+import kr.cosine.library.kommand.argument.ArgumentProvider
+import kr.cosine.library.kommand.argument.ArgumentRegistry
+import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.reflections.Reflections
+import org.reflections.scanners.Scanners
+import org.reflections.util.ClasspathHelper
+import org.reflections.util.ConfigurationBuilder
 import java.io.File
 import kotlin.coroutines.CoroutineContext
 
 abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
     override val coroutineContext: CoroutineContext
-        get() = CoroutineName("${this::class.simpleName}CoroutineScope")
+        get() = CoroutineName("${this::class.simpleName}CoroutineScope") + Dispatchers.Default
 
     val config = File(dataFolder, "config.yml").yml
 
@@ -33,6 +41,22 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
     @Deprecated("Replaced by onStop. This method should never be used.", ReplaceWith("onStop()"))
     override fun onDisable() {
         onStop()
+    }
+
+    fun registerArgumentProvider(vararg argumentProviders: ArgumentProvider<*>) {
+        argumentProviders.forEach { argumentProvider ->
+            ArgumentRegistry.registerArgument(argumentProvider)
+        }
+    }
+
+    fun registerCommand(vararg kommandExecutors: KommandExecutor) {
+        kommandExecutors.forEach(KommandExecutor::register)
+    }
+
+    fun registerListener(vararg listeners: Listener) {
+        listeners.forEach { listener ->
+            server.pluginManager.registerEvents(listener, this)
+        }
     }
 
     private fun loadConfig() {
