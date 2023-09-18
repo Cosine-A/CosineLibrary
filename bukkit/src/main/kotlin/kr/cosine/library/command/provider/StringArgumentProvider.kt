@@ -1,11 +1,9 @@
-package kr.cosine.library.command
+package kr.cosine.library.command.provider
 
-import kr.cosine.library.kommand.annotation.Argument
 import kr.cosine.library.kommand.argument.ArgumentProvider
 import org.bukkit.Location
 import org.bukkit.command.CommandSender
 
-@Argument
 class StringArgumentProvider : ArgumentProvider<String> {
 
     override fun cast(sender: CommandSender, argument: String?): String {

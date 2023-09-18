@@ -1,13 +1,14 @@
-package kr.cosine.library.command
+package kr.cosine.library.command.provider
 
-import kr.cosine.library.kommand.annotation.Argument
+import kr.cosine.library.CosineLibrary
 import kr.cosine.library.kommand.argument.ArgumentProvider
 import kr.cosine.library.kommand.exception.ArgumentMismatch
 import org.bukkit.Location
 import org.bukkit.command.CommandSender
 
-@Argument
-class IntegerArgumentProvider : ArgumentProvider<Int> {
+class IntegerArgumentProvider(
+    private val plugin: CosineLibrary
+) : ArgumentProvider<Int> {
 
     override fun cast(sender: CommandSender, argument: String?): Int {
         if (argument == null) {

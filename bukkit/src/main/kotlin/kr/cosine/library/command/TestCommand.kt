@@ -1,15 +1,16 @@
 package kr.cosine.library.command
 
 import kotlinx.coroutines.delay
+import kr.cosine.library.CosineLibrary
 import kr.cosine.library.kommand.KommandExecutor
 import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
 import kr.cosine.library.kommand.annotation.SubKommand
+import kr.cosine.library.reflection.ClassNameRegistry
 import org.bukkit.entity.Player
-import org.bukkit.plugin.java.JavaPlugin
 
 @Kommand("처벌")
-class TestCommand(plugin: JavaPlugin) : KommandExecutor(plugin) {
+class TestCommand(plugin: CosineLibrary) : KommandExecutor(plugin) {
 
     @BukkitAsync
     @SubKommand("제재", priority = 1)
@@ -21,6 +22,13 @@ class TestCommand(plugin: JavaPlugin) : KommandExecutor(plugin) {
     suspend fun test2(player: Player, target: Player, code: String, code2: String, code3: String, args: Array<String>) {
         delay(1000)
         player.sendMessage("입력: ${target.name}, $code, $code2, $code3, ${args.toList()}")
+    }
+
+    @SubKommand("확인", priority = 3)
+    fun show(player: Player) {
+        ClassNameRegistry.getAll().forEach {
+            player.sendMessage("class registry: $it")
+        }
     }
 
     @SubKommand("a", priority = 3)

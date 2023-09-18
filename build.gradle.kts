@@ -11,6 +11,7 @@ allprojects {
     repositories {
         mavenCentral()
         mavenLocal()
+        maven("https://jitpack.io")
     }
 }
 
@@ -26,7 +27,7 @@ subprojects {
 
     dependencies {
         api("com.zaxxer", "HikariCP", "5.0.1")
-        api("org.reflections", "reflections", "0.10.2")
+        api("io.github.classgraph", "classgraph", "4.8.5")
         api("org.yaml", "snakeyaml", "2.0")
         api("org.spongepowered", "configurate-yaml", "4.1.2")
 
@@ -48,10 +49,9 @@ subprojects {
         }
         configurations.runtimeClasspath.get().apply {
             exclude("com.zaxxer")
-            exclude("com.mysql")
+            exclude("io.github.classgraph")
             exclude("org.spongepowered")
             exclude("org.yaml")
-            exclude("org.reflections")
             exclude("org.jetbrains.kotlin")
             exclude("org.jetbrains.kotlinx")
             exclude("org.jetbrains.exposed")
@@ -59,6 +59,7 @@ subprojects {
         }
         tasks {
             shadowJar {
+                // relocate("org.reflections", "kr.cosine.library.reflections")
                 val path = if (subName == "bukkit") "로비2" else "프록시"
                 archiveFileName.set("${rootProject.name}-$subName-${rootProject.version}.jar")
                 destinationDirectory.set(file("D:\\서버\\1.20.1 - 번지\\$path\\plugins"))

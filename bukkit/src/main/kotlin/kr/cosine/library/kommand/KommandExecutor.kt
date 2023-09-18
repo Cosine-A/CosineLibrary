@@ -1,11 +1,7 @@
 package kr.cosine.library.kommand
 
-import com.google.common.reflect.ClassPath
-import com.google.common.reflect.Reflection
 import kotlinx.coroutines.*
-import kr.cosine.library.extension.applyColor
-import kr.cosine.library.extension.async
-import kr.cosine.library.kommand.annotation.Argument
+import kr.cosine.library.extension.*
 import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
 import kr.cosine.library.kommand.annotation.SubKommand
@@ -15,26 +11,23 @@ import kr.cosine.library.kommand.exception.ArgumentMismatch
 import kr.cosine.library.kommand.language.Language
 import kr.cosine.library.kommand.language.LanguageRegistry
 import kr.cosine.library.kommand.page.PageType
+import kr.cosine.library.plugin.BukkitPlugin
+import kr.cosine.library.reflection.ClassNameRegistry
+import kr.cosine.library.reflection.ClassRegistry
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.chat.hover.content.Text
 import org.bukkit.command.*
 import org.bukkit.entity.Player
-import org.bukkit.plugin.java.JavaPlugin
-import org.reflections.Reflections
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
-import java.util.stream.Collectors
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
-
 abstract class KommandExecutor(
-    private val plugin: JavaPlugin
+    private val plugin: BukkitPlugin
 ) : CommandExecutor, TabCompleter, CoroutineScope {
 
     override val coroutineContext: CoroutineContext
@@ -54,13 +47,22 @@ abstract class KommandExecutor(
             pluginCommand = plugin.getCommand(command)
                 ?: throw NullPointerException("$command is not registered in plugin.yml.")
         }
-        ArgumentProvider::class.allSuperclasses.forEach {
-            println("allSuperclasses: ${it.simpleName}")
+        ClassRegistry.getInheritedClasses(ArgumentProvider::class).forEach { classInfo ->
+            val clazz = classInfo.loadClass().kotlin
+            val qualifiedName = clazz.qualifiedName!!
+            if (ClassNameRegistry.contains(qualifiedName)) return@forEach
+            val constructor = clazz.primaryConstructor
+            val argumentProvider = try {
+                constructor?.call(plugin) as? ArgumentProvider<*>
+            } catch (_: IllegalArgumentException) {
+                constructor?.call() as? ArgumentProvider<*>
+            } ?: run {
+                plugin.logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
+                return@forEach
+            }
+            ClassNameRegistry.add(qualifiedName)
+            ArgumentRegistry.registerArgument(argumentProvider)
         }
-        /*val reflections = Reflections("kr.cosine")
-        reflections.getSubTypesOf(ArgumentProvider::class.java).forEach {
-            println("class: ${it.simpleName}")
-        }*/
         this::class.memberFunctions.filterIsInstance<KFunction<Unit>>().forEach { function ->
             val subKommand = function.findAnnotation<SubKommand>() ?: return@forEach
             arguments[subKommand.argument] = CommandArgument(subKommand, function)
@@ -76,10 +78,10 @@ abstract class KommandExecutor(
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        println("label: $label")
         if (args.isEmpty()) {
             if (sender is Player) {
                 runDefaultCommand(sender, label)
+                sender.attack(sender)
             } else {
                 runDefaultCommand(sender, label)
             }
@@ -154,32 +156,33 @@ abstract class KommandExecutor(
         val currentPageElement = pageHelper.getPageElement(PageType.CURRENT)
         val nextPageElement = pageHelper.getPageElement(PageType.NEXT)
 
-        val pageComponent = if (maxPage > 1 && beforePageElement != null && currentPageElement != null && nextPageElement != null) {
-            val beforePageComponent = createPageComponent(
-                beforePageElement.display,
-                beforePageElement.showText,
-                "/$label help ${page - 1}"
-            )
-            val currentPageComponent = createPageComponent(
-                currentPageElement.display
-                    .replace("%current%", "$page")
-                    .replace("%max%", "$maxPage"),
-                currentPageElement.showText
-                    .replace("%current%", "$page")
-            )
-            val nextPageComponent = createPageComponent(
-                nextPageElement.display,
-                nextPageElement.showText,
-                "/$label help ${page + 1}"
-            )
-            TextComponent().apply {
-                addExtra(beforePageComponent)
-                addExtra(currentPageComponent)
-                addExtra(nextPageComponent)
+        val pageComponent =
+            if (maxPage > 1 && beforePageElement != null && currentPageElement != null && nextPageElement != null) {
+                val beforePageComponent = createPageComponent(
+                    beforePageElement.display,
+                    beforePageElement.showText,
+                    "/$label help ${page - 1}"
+                )
+                val currentPageComponent = createPageComponent(
+                    currentPageElement.display
+                        .replace("%current%", "$page")
+                        .replace("%max%", "$maxPage"),
+                    currentPageElement.showText
+                        .replace("%current%", "$page")
+                )
+                val nextPageComponent = createPageComponent(
+                    nextPageElement.display,
+                    nextPageElement.showText,
+                    "/$label help ${page + 1}"
+                )
+                TextComponent().apply {
+                    addExtra(beforePageComponent)
+                    addExtra(currentPageComponent)
+                    addExtra(nextPageComponent)
+                }
+            } else {
+                null
             }
-        } else {
-            null
-        }
         sender.sendMessage("")
         if (pageComponent != null) {
             sender.spigot().sendMessage(pageComponent)

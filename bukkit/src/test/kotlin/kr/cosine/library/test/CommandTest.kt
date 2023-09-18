@@ -1,10 +1,8 @@
 package kr.cosine.library.test
 
-import com.google.common.reflect.ClassPath
 import kr.cosine.library.kommand.annotation.Argument
 import org.junit.jupiter.api.Test
 import org.reflections.Reflections
-import java.io.IOException
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.jvmErasure
@@ -34,18 +32,15 @@ class CommandTest {
     fun text(text: String) {}
 
     @Test
-    fun class_test() {
-        findClasses("kr.cosine.library.test").forEach {
-            println("class: ${it.simpleName}")
-        }
+    fun package_test() {
+        println("package: ${"org.jetbrains".getPackage()}")
     }
 
-    @Throws(IOException::class)
-    fun findClasses(packageName: String): List<Class<*>> {
-        return ClassPath.from(ClassLoader.getSystemClassLoader())
-            .allClasses.filter { clazz ->
-                clazz.packageName.contains(packageName)
-            }.map { clazz -> clazz.load() }
+    private fun String.getPackage(): String {
+        val regex = Regex("(\\w+)\\.(\\w+)")
+        val matchResult = regex.find(this)
+        val group = matchResult?.groups!!
+        return group[0]!!.value
     }
 
     @Test

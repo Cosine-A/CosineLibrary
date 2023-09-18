@@ -1,18 +1,11 @@
 package kr.cosine.library
 
-import kr.cosine.library.command.IntegerArgumentProvider
-import kr.cosine.library.command.PlayerArgumentProvider
-import kr.cosine.library.command.StringArgumentProvider
-import kr.cosine.library.command.TestCommand
 import kr.cosine.library.database.DataSource
 import kr.cosine.library.extension.LogColor
 import kr.cosine.library.extension.info
-import kr.cosine.library.kommand.argument.ArgumentRegistry
 import kr.cosine.library.plugin.BukkitPlugin
-import org.reflections.Reflections
-import org.reflections.scanners.Scanners
-import org.reflections.util.ClasspathHelper
-import org.reflections.util.ConfigurationBuilder
+import kr.cosine.library.reflection.ClassNameRegistry
+import kr.cosine.library.reflection.ClassRegistry
 
 class CosineLibrary : BukkitPlugin() {
 
@@ -32,18 +25,20 @@ class CosineLibrary : BukkitPlugin() {
     override fun onStart() {
         setupDatabase()
 
-        registerArgumentProvider(
+        /*registerArgumentProvider(
             StringArgumentProvider(),
             IntegerArgumentProvider(),
             PlayerArgumentProvider()
         )
         registerCommand(
             TestCommand(this)
-        )
+        )*/
     }
 
     override fun onStop() {
         dataSource?.close()
+        ClassNameRegistry.clear()
+        ClassRegistry.clear()
     }
 
     private fun setupDatabase() {

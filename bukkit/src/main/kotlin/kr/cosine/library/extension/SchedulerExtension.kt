@@ -2,9 +2,6 @@ package kr.cosine.library.extension
 
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
-import org.reflections.Reflections
-
-val reflections = Reflections("kr.cosine.library.command")
 
 fun Plugin.sync(block: () -> Unit): BukkitTask {
     return server.scheduler.runTask(this, block)
