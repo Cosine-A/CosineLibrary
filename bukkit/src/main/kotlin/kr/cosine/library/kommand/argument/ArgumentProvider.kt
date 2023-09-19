@@ -10,7 +10,7 @@ import org.bukkit.command.CommandSender
  * BukkitPlugin을 상속받는 클래스를 생성자에서 주입 받을 수 있습니다.
  * (A class that inherits BukkitPlugin can be injected from the constructor.)
 **/
-interface ArgumentProvider<T : Any> {
+interface ArgumentProvider<T> {
 
     fun cast(sender: CommandSender, argument: String?): T
 
