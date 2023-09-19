@@ -44,6 +44,7 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
         onStart()
         loadClass()
+        registerTable()
         registerListener()
         registerCommand()
     }
@@ -71,6 +72,26 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
         }
     }
 
+    private fun registerTable() {
+        val tableClasses = classRegistry.getInheritedClasses(Table::class)
+        if (tableClasses.isNotEmpty() && !CosineLibrary.instance.config.getBoolean("mysql.enabled")) {
+            logger.send("Database is not enabled.", LogColor.RED)
+            logger.send("Change 'mysql.enabled' to true in CosineLibrary's config.yml.", LogColor.RED)
+            return
+        }
+        tableClasses.forEach { clazz ->
+            val table = clazz.objectInstance as Table
+            val database = CosineLibrary.getDataSource().database
+            transaction(database) {
+                val tableName = table.tableName
+                if (!Table(tableName).exists()) {
+                    SchemaUtils.create(table)
+                    logger.send("Table[${tableName}] is created.", LogColor.GREEN)
+                }
+            }
+        }
+    }
+
     @Deprecated("Replaced by onStop. This method should never be used.", ReplaceWith("onStop()"))
     override fun onDisable() {
         onStop()
@@ -84,24 +105,6 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
             file.bufferedWriter().use { writer ->
                 inputStream.reader().readLines().forEach { line ->
                     writer.appendLine(line)
-                }
-            }
-        }
-    }
-
-    protected fun setupTable(vararg tables: Table) {
-        if (!CosineLibrary.plugin.config.getBoolean("mysql.enabled")) {
-            logger.info("Database is not enabled.", LogColor.RED)
-            logger.info("Change 'mysql.enabled' to true in CosineLibrary's config.yml.", LogColor.RED)
-            return
-        }
-        tables.forEach { table ->
-            val database = CosineLibrary.getDataSource().database
-            transaction(database) {
-                val tableName = table.tableName
-                if (!Table(tableName).exists()) {
-                    SchemaUtils.create(table)
-                    logger.info("Table[${tableName}] is created.", LogColor.GREEN)
                 }
             }
         }

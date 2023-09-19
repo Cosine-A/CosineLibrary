@@ -10,7 +10,7 @@ enum class LogColor {
     BLUE,
 }
 
-fun Logger.info(message: String, logColor: LogColor = LogColor.NONE) {
+fun Logger.send(message: String, logColor: LogColor = LogColor.NONE) {
     val finalMessage = when (logColor) {
         LogColor.RED -> "\u001B[31m$message\u001B[0m"
         LogColor.GREEN -> "\u001B[32m$message\u001B[0m"
