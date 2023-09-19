@@ -267,7 +267,7 @@ abstract class KommandExecutor(
                 }
             }.toMutableList()
             val lastParameter = functionParameters.lastOrNull()
-            if (lastParameter?.type?.jvmErasure == Array<String>::class) {
+            if (lastParameter != null && lastParameter.isVararg) {
                 println("functionParameters: ${functionParameters.map { it.type.jvmErasure.simpleName }}")
                 println("args: ${args.toList()}")
                 val copyArgs = args.copyOfRange(functionParameters.size - 2, args.size)

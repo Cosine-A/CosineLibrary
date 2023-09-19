@@ -20,7 +20,7 @@ class TestCommand(
     }
 
     @SubKommand("테스트", isOp = true, priority = 2)
-    suspend fun test2(player: Player, target: Player, code: String, code2: String, code3: String, args: Array<String>) {
+    suspend fun test2(player: Player, target: Player, code: String, code2: String, code3: String, vararg args: String) {
         delay(1000)
         player.sendMessage("입력: ${target.name}, $code, $code2, $code3, ${args.toList()}")
     }
@@ -30,6 +30,11 @@ class TestCommand(
         plugin.classRegistry.getAll().forEach {
             player.sendMessage("class: ${it.simpleName}")
         }
+    }
+
+    @SubKommand("가변", priority = 3)
+    fun show2(player: Player, text: String, vararg args: String) {
+        player.sendMessage("입력: $text, ${args.toList()}")
     }
 
     @SubKommand("a", priority = 3)
