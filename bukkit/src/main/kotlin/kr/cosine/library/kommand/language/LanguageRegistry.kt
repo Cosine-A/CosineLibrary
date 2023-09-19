@@ -1,6 +1,6 @@
 package kr.cosine.library.kommand.language
 
-import kr.cosine.library.config.extension.yml
+import kr.cosine.library.extension.yml
 import kr.cosine.library.plugin.BukkitPlugin
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -22,7 +22,6 @@ class LanguageRegistry(
             it.name.endsWith(".yml")
         }?.forEach { file ->
             val name = file.name.removeSuffix(".yml")
-            println("lang: $name")
             languageMap[name] = Language(file.yml.also { it.reload() })
         }
     }

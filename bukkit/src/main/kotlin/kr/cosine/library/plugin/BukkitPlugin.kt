@@ -4,10 +4,12 @@ import com.google.common.reflect.ClassPath
 import kotlinx.coroutines.*
 import kr.cosine.library.CosineLibrary
 import kr.cosine.library.config.YamlConfiguration
-import kr.cosine.library.config.extension.yml
+import kr.cosine.library.extension.newInstance
+import kr.cosine.library.extension.yml
 import kr.cosine.library.extension.*
 import kr.cosine.library.kommand.KommandExecutor
 import kr.cosine.library.reflection.ClassRegistry
+import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
@@ -42,6 +44,7 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
         onStart()
         loadClass()
+        registerListener()
         registerCommand()
     }
 
@@ -56,13 +59,15 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
     private fun registerCommand() {
         classRegistry.getInheritedClasses(KommandExecutor::class).forEach { clazz ->
-            val kommandExecutor = runCatching {
-                clazz.primaryConstructor?.call(this@BukkitPlugin) as KommandExecutor
-            }.getOrNull() ?: run {
-                logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
-                return@forEach
-            }
+            val kommandExecutor = clazz.primaryConstructor.newInstance<KommandExecutor>(this)
             kommandExecutor.register()
+        }
+    }
+
+    private fun registerListener() {
+        classRegistry.getInheritedClasses(Listener::class).forEach { clazz ->
+            val listener = clazz.primaryConstructor.newInstance<Listener>(this)
+            server.pluginManager.registerEvents(listener, this)
         }
     }
 

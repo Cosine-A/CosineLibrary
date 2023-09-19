@@ -1,4 +1,4 @@
-package kr.cosine.library.config.extension
+package kr.cosine.library.extension
 
 import kr.cosine.library.config.YamlConfiguration
 import kr.cosine.library.config.impl.YamlConfigurationImpl

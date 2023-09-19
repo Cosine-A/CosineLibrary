@@ -50,15 +50,7 @@ abstract class KommandExecutor(
         }
         argumentProviderRegistry = ArgumentProviderRegistry()
         plugin.classRegistry.getInheritedClasses(ArgumentProvider::class).forEach { clazz ->
-            val constructor = clazz.primaryConstructor
-            val argumentProvider = try {
-                constructor?.call(plugin) as? ArgumentProvider<*>
-            } catch (_: IllegalArgumentException) {
-                constructor?.call() as? ArgumentProvider<*>
-            } ?: run {
-                plugin.logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
-                return@forEach
-            }
+            val argumentProvider = clazz.primaryConstructor.newInstance<ArgumentProvider<*>>(plugin)
             argumentProviderRegistry.register(argumentProvider)
         }
         argumentRegistry = ArgumentRegistry()
