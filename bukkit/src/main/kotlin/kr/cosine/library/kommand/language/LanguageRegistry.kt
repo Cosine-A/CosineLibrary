@@ -10,15 +10,19 @@ class LanguageRegistry(
     private val languageFolder: File
 ) {
 
+    private val languageFiles get() = languageFolder.listFiles()
+
     private val languageMap = mutableMapOf<String, Language>()
 
     fun load(plugin: BukkitPlugin) {
-        val languageFiles = languageFolder.listFiles()?.filter { it.name.endsWith(".yml") }
         if (languageFiles?.any { it.name == "en_us.yml" } == false) {
             plugin.createResourceFile("language/en_us.yml")
         }
-        languageFiles?.forEach { file ->
+        languageFiles?.filter {
+            it.name.endsWith(".yml")
+        }?.forEach { file ->
             val name = file.name.removeSuffix(".yml")
+            println("lang: $name")
             languageMap[name] = Language(file.yml.also { it.reload() })
         }
     }
