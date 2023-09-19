@@ -10,7 +10,9 @@ import kr.cosine.library.reflection.ClassNameRegistry
 import org.bukkit.entity.Player
 
 @Kommand("처벌")
-class TestCommand(plugin: CosineLibrary) : KommandExecutor(plugin) {
+class TestCommand(
+    private val plugin: CosineLibrary
+) : KommandExecutor(plugin) {
 
     @BukkitAsync
     @SubKommand("제재", priority = 1)
@@ -26,7 +28,7 @@ class TestCommand(plugin: CosineLibrary) : KommandExecutor(plugin) {
 
     @SubKommand("확인", priority = 3)
     fun show(player: Player) {
-        ClassNameRegistry.getAll().forEach {
+        plugin.classNameRegistry.getAll().forEach {
             player.sendMessage("class registry: $it")
         }
     }

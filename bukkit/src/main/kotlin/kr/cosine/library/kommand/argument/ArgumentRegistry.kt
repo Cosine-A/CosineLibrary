@@ -1,23 +1,16 @@
 package kr.cosine.library.kommand.argument
 
-import kotlin.reflect.KClassifier
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.jvm.jvmErasure
+import kr.cosine.library.kommand.KommandExecutor
 
-internal object ArgumentRegistry {
+internal class ArgumentRegistry {
 
-    private val argumentMap = mutableMapOf<KClassifier, ArgumentProvider<*>>()
+    private val argumentMap = mutableMapOf<String, KommandExecutor.CommandArgument>()
 
-    fun getArgument(classifier: KClassifier): ArgumentProvider<*>? {
-        return argumentMap[classifier]
+    fun get(argument: String): KommandExecutor.CommandArgument? = argumentMap[argument]
+
+    fun set(argument: String, commandArgument: KommandExecutor.CommandArgument) {
+        argumentMap[argument] = commandArgument
     }
 
-    fun registerArgument(argumentProvider: ArgumentProvider<*>) {
-        val classifier = argumentProvider::class.supertypes.first {
-            it.isSubtypeOf(ArgumentProvider::class.starProjectedType)
-        }.arguments.first().type!!.jvmErasure
-        println("[ArgumentRegistry] ${classifier.simpleName}")
-        argumentMap[classifier] = argumentProvider
-    }
+    fun getValues(): List<KommandExecutor.CommandArgument> = argumentMap.values.toList()
 }

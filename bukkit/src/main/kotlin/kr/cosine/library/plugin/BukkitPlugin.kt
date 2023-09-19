@@ -1,13 +1,13 @@
 package kr.cosine.library.plugin
 
-import io.github.classgraph.ClassGraph
+import com.google.common.reflect.ClassPath
 import kotlinx.coroutines.*
 import kr.cosine.library.CosineLibrary
 import kr.cosine.library.config.extension.yml
 import kr.cosine.library.extension.*
 import kr.cosine.library.kommand.KommandExecutor
 import kr.cosine.library.kommand.argument.ArgumentProvider
-import kr.cosine.library.kommand.argument.ArgumentRegistry
+import kr.cosine.library.kommand.argument.ArgumentProviderRegistry
 import kr.cosine.library.reflection.ClassNameRegistry
 import kr.cosine.library.reflection.ClassRegistry
 import org.bukkit.event.Listener
@@ -20,6 +20,7 @@ import java.io.File
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.full.primaryConstructor
 
+@Suppress("UnstableApiUsage")
 abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
     override val coroutineContext: CoroutineContext
@@ -27,8 +28,11 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
     val config = File(dataFolder, "config.yml").yml
 
-    private val classGraph =
-        ClassGraph().enableClassInfo().enableAnnotationInfo().whitelistPackages(this::class.packageName)
+    lateinit var classRegistry: ClassRegistry
+        private set
+
+    lateinit var classNameRegistry: ClassNameRegistry
+        private set
 
     open fun onStart() {}
 
@@ -36,27 +40,30 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
     @Deprecated("Replaced by onStart. This method should never be used.", ReplaceWith("onStart()"))
     override fun onEnable() {
-        loadConfig()
+        createResourceFile("config.yml")
+
+        classRegistry = ClassRegistry()
+        classNameRegistry = ClassNameRegistry()
+
         onStart()
-        ClassGraph().enableClassInfo().enableAnnotationInfo().whitelistPackages(this::class.packageName).scan().use { scanResult ->
-            // 고쳐야됨
-            scanResult.allClasses.forEach { classInfo ->
-                println("classInfo: ${classInfo.simpleName}")
-                ClassRegistry.add(classInfo)
+
+        val classPath = ClassPath.from(super.getClassLoader()).getTopLevelClassesRecursive(this::class.java.packageName)
+        classPath.forEach { classInfo ->
+            val clazz = classInfo.load().kotlin
+            if (!clazz.simpleName!!.endsWith("Kt")) {
+                classRegistry.add(clazz)
             }
         }
-        // ClassInfo use 끝나고 못씀
-        ClassRegistry.getInheritedClasses(KommandExecutor::class).forEach { classInfo ->
-            val clazz = classInfo.loadClass().kotlin
+        classRegistry.getInheritedClasses(KommandExecutor::class).forEach { clazz ->
             val qualifiedName = clazz.qualifiedName!!
-            if (ClassNameRegistry.contains(qualifiedName)) return@forEach
+            if (classNameRegistry.contains(qualifiedName)) return@forEach
             val kommandExecutor = runCatching {
                 clazz.primaryConstructor?.call(this@BukkitPlugin) as KommandExecutor
             }.getOrNull() ?: run {
                 logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
                 return@forEach
             }
-            ClassNameRegistry.add(qualifiedName)
+            classNameRegistry.add(qualifiedName)
             kommandExecutor.register()
         }
     }
@@ -66,26 +73,10 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
         onStop()
     }
 
-    fun registerArgumentProvider(vararg argumentProviders: ArgumentProvider<*>) {
-        argumentProviders.forEach { argumentProvider ->
-            ArgumentRegistry.registerArgument(argumentProvider)
-        }
-    }
-
-    fun registerCommand(vararg kommandExecutors: KommandExecutor) {
-        kommandExecutors.forEach(KommandExecutor::register)
-    }
-
-    fun registerListener(vararg listeners: Listener) {
-        listeners.forEach { listener ->
-            server.pluginManager.registerEvents(listener, this)
-        }
-    }
-
-    private fun loadConfig() {
-        val inputStream = getResource("config.yml") ?: return
+    fun createResourceFile(path: String) {
+        val inputStream = getResource(path) ?: return
         if (!dataFolder.exists()) dataFolder.mkdirs()
-        val file = File(dataFolder, "config.yml")
+        val file = File(dataFolder, path)
         if (!file.exists()) {
             file.bufferedWriter().use { writer ->
                 inputStream.reader().readLines().forEach { line ->

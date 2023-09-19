@@ -4,8 +4,6 @@ import kr.cosine.library.database.DataSource
 import kr.cosine.library.extension.LogColor
 import kr.cosine.library.extension.info
 import kr.cosine.library.plugin.BukkitPlugin
-import kr.cosine.library.reflection.ClassNameRegistry
-import kr.cosine.library.reflection.ClassRegistry
 
 class CosineLibrary : BukkitPlugin() {
 
@@ -37,8 +35,6 @@ class CosineLibrary : BukkitPlugin() {
 
     override fun onStop() {
         dataSource?.close()
-        ClassNameRegistry.clear()
-        ClassRegistry.clear()
     }
 
     private fun setupDatabase() {

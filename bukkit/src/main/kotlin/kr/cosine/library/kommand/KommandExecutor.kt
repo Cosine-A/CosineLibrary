@@ -6,14 +6,13 @@ import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
 import kr.cosine.library.kommand.annotation.SubKommand
 import kr.cosine.library.kommand.argument.ArgumentProvider
+import kr.cosine.library.kommand.argument.ArgumentProviderRegistry
 import kr.cosine.library.kommand.argument.ArgumentRegistry
 import kr.cosine.library.kommand.exception.ArgumentMismatch
 import kr.cosine.library.kommand.language.Language
 import kr.cosine.library.kommand.language.LanguageRegistry
 import kr.cosine.library.kommand.page.PageType
 import kr.cosine.library.plugin.BukkitPlugin
-import kr.cosine.library.reflection.ClassNameRegistry
-import kr.cosine.library.reflection.ClassRegistry
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
@@ -35,7 +34,9 @@ abstract class KommandExecutor(
 
     private var pluginCommand: PluginCommand
 
-    private val arguments = mutableMapOf<String, CommandArgument>()
+    private val argumentProviderRegistry: ArgumentProviderRegistry
+
+    private val argumentRegistry: ArgumentRegistry
 
     private val languageRegistry: LanguageRegistry
 
@@ -47,10 +48,12 @@ abstract class KommandExecutor(
             pluginCommand = plugin.getCommand(command)
                 ?: throw NullPointerException("$command is not registered in plugin.yml.")
         }
-        ClassRegistry.getInheritedClasses(ArgumentProvider::class).forEach { classInfo ->
-            val clazz = classInfo.loadClass().kotlin
+        argumentProviderRegistry = ArgumentProviderRegistry()
+        val classRegistry = plugin.classRegistry
+        val classNameRegistry = plugin.classNameRegistry
+        classRegistry.getInheritedClasses(ArgumentProvider::class).forEach { clazz ->
             val qualifiedName = clazz.qualifiedName!!
-            if (ClassNameRegistry.contains(qualifiedName)) return@forEach
+            if (classNameRegistry.contains(qualifiedName)) return@forEach
             val constructor = clazz.primaryConstructor
             val argumentProvider = try {
                 constructor?.call(plugin) as? ArgumentProvider<*>
@@ -60,16 +63,18 @@ abstract class KommandExecutor(
                 plugin.logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
                 return@forEach
             }
-            ClassNameRegistry.add(qualifiedName)
-            ArgumentRegistry.registerArgument(argumentProvider)
+            classNameRegistry.add(qualifiedName)
+            argumentProviderRegistry.register(argumentProvider)
         }
+        argumentRegistry = ArgumentRegistry()
         this::class.memberFunctions.filterIsInstance<KFunction<Unit>>().forEach { function ->
             val subKommand = function.findAnnotation<SubKommand>() ?: return@forEach
-            arguments[subKommand.argument] = CommandArgument(subKommand, function)
+            val commandArgument = CommandArgument(subKommand, function)
+            argumentRegistry.set(subKommand.argument, commandArgument)
         }
-        val languageFolder = File(plugin.dataFolder, "language")
+        val languageFolder = File(plugin.dataFolder, "language").also { if (!it.exists()) it.mkdirs() }
         languageRegistry = LanguageRegistry(languageFolder)
-        languageRegistry.load()
+        languageRegistry.load(plugin)
     }
 
     fun register() {
@@ -87,7 +92,7 @@ abstract class KommandExecutor(
             }
             return true
         }
-        val language = languageRegistry.getLanguage(sender)
+        val language = languageRegistry.get(sender)
         val input = args[0]
         if (input == "help") {
             if (args.size == 1) {
@@ -107,7 +112,7 @@ abstract class KommandExecutor(
             }
             return true
         }
-        val argument = arguments[input] ?: run {
+        val argument = argumentRegistry.get(input) ?: run {
             val message = language.getGlobalErrorMessage("not-exist-command").applyColor()
             sender.sendMessage(message)
             return true
@@ -134,7 +139,7 @@ abstract class KommandExecutor(
     }
 
     private fun printHelp(sender: CommandSender, label: String, page: Int): Boolean {
-        val arguments = arguments.values.filter {
+        val arguments = argumentRegistry.getValues().filter {
             it.hasPermission(sender) && !it.isHide()
         }.sortedBy {
             it.subKommand.priority
@@ -145,7 +150,7 @@ abstract class KommandExecutor(
         val realPage = page - 1
         val nowPageArguments = chunkedArguments.getOrNull(realPage) ?: return false
 
-        val language = languageRegistry.getLanguage(sender)
+        val language = languageRegistry.get(sender)
         sender.sendMessage("")
         nowPageArguments.forEach {
             it.printDescription(sender, label, language)
@@ -156,33 +161,34 @@ abstract class KommandExecutor(
         val currentPageElement = pageHelper.getPageElement(PageType.CURRENT)
         val nextPageElement = pageHelper.getPageElement(PageType.NEXT)
 
-        val pageComponent =
-            if (maxPage > 1 && beforePageElement != null && currentPageElement != null && nextPageElement != null) {
-                val beforePageComponent = createPageComponent(
-                    beforePageElement.display,
-                    beforePageElement.showText,
-                    "/$label help ${page - 1}"
-                )
-                val currentPageComponent = createPageComponent(
-                    currentPageElement.display
-                        .replace("%current%", "$page")
-                        .replace("%max%", "$maxPage"),
-                    currentPageElement.showText
-                        .replace("%current%", "$page")
-                )
-                val nextPageComponent = createPageComponent(
-                    nextPageElement.display,
-                    nextPageElement.showText,
-                    "/$label help ${page + 1}"
-                )
-                TextComponent().apply {
-                    addExtra(beforePageComponent)
-                    addExtra(currentPageComponent)
-                    addExtra(nextPageComponent)
-                }
-            } else {
-                null
+        val pageComponent = if (maxPage > 1 &&
+            beforePageElement != null && currentPageElement != null && nextPageElement != null
+        ) {
+            val beforePageComponent = createPageComponent(
+                beforePageElement.display,
+                beforePageElement.showText,
+                "/$label help ${page - 1}"
+            )
+            val currentPageComponent = createPageComponent(
+                currentPageElement.display
+                    .replace("%current%", "$page")
+                    .replace("%max%", "$maxPage"),
+                currentPageElement.showText
+                    .replace("%current%", "$page")
+            )
+            val nextPageComponent = createPageComponent(
+                nextPageElement.display,
+                nextPageElement.showText,
+                "/$label help ${page + 1}"
+            )
+            TextComponent().apply {
+                addExtra(beforePageComponent)
+                addExtra(currentPageComponent)
+                addExtra(nextPageComponent)
             }
+        } else {
+            null
+        }
         sender.sendMessage("")
         if (pageComponent != null) {
             sender.spigot().sendMessage(pageComponent)
@@ -199,9 +205,9 @@ abstract class KommandExecutor(
         }
     }
 
-    private inner class CommandArgument(
+    inner class CommandArgument(
         val subKommand: SubKommand,
-        val function: KFunction<Unit>
+        private val function: KFunction<Unit>
     ) {
 
         private var isBukkitAsync = function.hasAnnotation<BukkitAsync>()
@@ -214,7 +220,7 @@ abstract class KommandExecutor(
 
                 val type = parameter.type
                 val clazz = type.jvmErasure
-                val argument = ArgumentRegistry.getArgument(clazz) ?: return@forEachIndexed
+                val argument = argumentProviderRegistry.get(clazz) ?: return@forEachIndexed
 
                 argumentParameters.add(argument to !type.isMarkedNullable)
             }

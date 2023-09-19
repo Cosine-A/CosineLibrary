@@ -27,7 +27,6 @@ subprojects {
 
     dependencies {
         api("com.zaxxer", "HikariCP", "5.0.1")
-        api("io.github.classgraph", "classgraph", "4.8.5")
         api("org.yaml", "snakeyaml", "2.0")
         api("org.spongepowered", "configurate-yaml", "4.1.2")
 
@@ -49,7 +48,6 @@ subprojects {
         }
         configurations.runtimeClasspath.get().apply {
             exclude("com.zaxxer")
-            exclude("io.github.classgraph")
             exclude("org.spongepowered")
             exclude("org.yaml")
             exclude("org.jetbrains.kotlin")

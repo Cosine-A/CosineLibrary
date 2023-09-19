@@ -1,6 +1,6 @@
 package kr.cosine.library.reflection
 
-internal object ClassNameRegistry {
+class ClassNameRegistry {
 
     private val registeredClass = mutableListOf<String>()
 
@@ -11,8 +11,4 @@ internal object ClassNameRegistry {
     }
 
     fun getAll(): List<String> = registeredClass
-
-    fun clear() {
-        registeredClass.clear()
-    }
 }

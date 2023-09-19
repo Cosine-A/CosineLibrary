@@ -1,13 +1,14 @@
 package kr.cosine.library.reflection
 
-import io.github.classgraph.ClassInfo
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.isSuperclassOf
 
-internal object ClassRegistry {
+class ClassRegistry {
 
-    private val classes = mutableSetOf<ClassInfo>()
+    private val classes = mutableSetOf<KClass<*>>()
 
-    fun <T : Annotation> getAnnotatedClasses(clazz: KClass<T>): List<ClassInfo> {
+    /*fun <T : Annotation> getAnnotatedClasses(clazz: KClass<T>): List<ClassInfo> {
         return classes.filter { it.hasAnnotation(clazz.java.name) }
     }
 
@@ -16,13 +17,15 @@ internal object ClassRegistry {
             val name = clazz.java.name
             it.extendsSuperclass(name) || it.implementsInterface(name)
         }
+    }*/
+
+    fun <T : Any> getInheritedClasses(clazz: KClass<T>): List<KClass<*>> {
+        return classes.filter { it.isSubclassOf(clazz) && it != clazz }
     }
 
-    fun add(clazz: ClassInfo) {
+    fun add(clazz: KClass<*>) {
         classes.add(clazz)
     }
 
-    fun clear() {
-        classes.clear()
-    }
+    fun getAll(): Set<KClass<*>> = classes
 }
