@@ -49,11 +49,7 @@ abstract class KommandExecutor(
                 ?: throw NullPointerException("$command is not registered in plugin.yml.")
         }
         argumentProviderRegistry = ArgumentProviderRegistry()
-        val classRegistry = plugin.classRegistry
-        val classNameRegistry = plugin.classNameRegistry
-        classRegistry.getInheritedClasses(ArgumentProvider::class).forEach { clazz ->
-            val qualifiedName = clazz.qualifiedName!!
-            if (classNameRegistry.contains(qualifiedName)) return@forEach
+        plugin.classRegistry.getInheritedClasses(ArgumentProvider::class).forEach { clazz ->
             val constructor = clazz.primaryConstructor
             val argumentProvider = try {
                 constructor?.call(plugin) as? ArgumentProvider<*>
@@ -63,7 +59,6 @@ abstract class KommandExecutor(
                 plugin.logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
                 return@forEach
             }
-            classNameRegistry.add(qualifiedName)
             argumentProviderRegistry.register(argumentProvider)
         }
         argumentRegistry = ArgumentRegistry()
@@ -86,7 +81,6 @@ abstract class KommandExecutor(
         if (args.isEmpty()) {
             if (sender is Player) {
                 runDefaultCommand(sender, label)
-                sender.attack(sender)
             } else {
                 runDefaultCommand(sender, label)
             }
@@ -205,7 +199,7 @@ abstract class KommandExecutor(
         }
     }
 
-    inner class CommandArgument(
+    internal inner class CommandArgument(
         val subKommand: SubKommand,
         private val function: KFunction<Unit>
     ) {

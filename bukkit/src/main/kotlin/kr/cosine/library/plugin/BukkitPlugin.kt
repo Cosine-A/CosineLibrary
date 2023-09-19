@@ -3,14 +3,11 @@ package kr.cosine.library.plugin
 import com.google.common.reflect.ClassPath
 import kotlinx.coroutines.*
 import kr.cosine.library.CosineLibrary
+import kr.cosine.library.config.YamlConfiguration
 import kr.cosine.library.config.extension.yml
 import kr.cosine.library.extension.*
 import kr.cosine.library.kommand.KommandExecutor
-import kr.cosine.library.kommand.argument.ArgumentProvider
-import kr.cosine.library.kommand.argument.ArgumentProviderRegistry
-import kr.cosine.library.reflection.ClassNameRegistry
 import kr.cosine.library.reflection.ClassRegistry
-import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
@@ -26,12 +23,10 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = CoroutineName("${this::class.simpleName}CoroutineScope") + Dispatchers.Default
 
-    val config = File(dataFolder, "config.yml").yml
-
-    lateinit var classRegistry: ClassRegistry
+    lateinit var config: YamlConfiguration
         private set
 
-    lateinit var classNameRegistry: ClassNameRegistry
+    lateinit var classRegistry: ClassRegistry
         private set
 
     open fun onStart() {}
@@ -42,28 +37,31 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
     override fun onEnable() {
         createResourceFile("config.yml")
 
+        config = File(dataFolder, "config.yml").yml
         classRegistry = ClassRegistry()
-        classNameRegistry = ClassNameRegistry()
 
         onStart()
+        loadClass()
+        registerCommand()
+    }
 
+    private fun loadClass() {
         val classPath = ClassPath.from(super.getClassLoader()).getTopLevelClassesRecursive(this::class.java.packageName)
         classPath.forEach { classInfo ->
             val clazz = classInfo.load().kotlin
-            if (!clazz.simpleName!!.endsWith("Kt")) {
-                classRegistry.add(clazz)
-            }
+            if (clazz.simpleName!!.endsWith("Kt")) return@forEach
+            classRegistry.add(clazz)
         }
+    }
+
+    private fun registerCommand() {
         classRegistry.getInheritedClasses(KommandExecutor::class).forEach { clazz ->
-            val qualifiedName = clazz.qualifiedName!!
-            if (classNameRegistry.contains(qualifiedName)) return@forEach
             val kommandExecutor = runCatching {
                 clazz.primaryConstructor?.call(this@BukkitPlugin) as KommandExecutor
             }.getOrNull() ?: run {
                 logger.info("${clazz.simpleName} class's primary constructor call failed.", LogColor.RED)
                 return@forEach
             }
-            classNameRegistry.add(qualifiedName)
             kommandExecutor.register()
         }
     }
@@ -82,7 +80,6 @@ abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
                 inputStream.reader().readLines().forEach { line ->
                     writer.appendLine(line)
                 }
-                config.reload()
             }
         }
     }
