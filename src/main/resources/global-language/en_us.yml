@@ -1,0 +1,18 @@
+error:
+  command-only-player: '&c콘솔에서 사용할 수 없는 명령어입니다.'
+  has-not-permission: '&c해당 명령어를 사용할 수 있는 권한이 없습니다.'
+  not-exist-command: '&c존재하지 않는 명령어입니다.'
+  input-page: '&c페이지를 입력해주세요.'
+  only-integer: '&c숫자만 입력할 수 있습니다.'
+  not-exist-page: '&c존재하지 않는 페이지입니다.'
+
+page:
+  before:
+    display: '&c<--- 이전 페이지'
+    show-text: '&f이전 페이지로 이동합니다.'
+  current:
+    display: ' &e%current%/%max% '
+    show-text: '&f현재 %current% 페이지입니다.'
+  next:
+    display: '&a다음 페이지 --->'
+    show-text: '&f다음 페이지로 이동합니다.'
