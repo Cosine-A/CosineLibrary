@@ -22,7 +22,7 @@ import kotlin.reflect.full.primaryConstructor
 abstract class BukkitPlugin : JavaPlugin(), CoroutineScope {
 
     override val coroutineContext: CoroutineContext
-        get() = CoroutineName("${this::class.simpleName}CoroutineScope") + Dispatchers.Default
+        get() = CoroutineName("${this::class.simpleName}CoroutineScope") + Dispatchers.IO
 
     lateinit var classRegistry: ClassRegistry
         private set

@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
 class PlayerArgumentProvider(
-    private val plugin: kr.cosine.library.CosineLibrary
+    private val plugin: CosineLibrary
 ) : ArgumentProvider<Player> {
 
     override fun cast(sender: CommandSender, argument: String?): Player {

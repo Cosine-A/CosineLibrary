@@ -2,26 +2,35 @@ package kr.cosine.library.command
 
 import kotlinx.coroutines.delay
 import kr.cosine.library.CosineLibrary
+import kr.cosine.library.exception.BukkitException
+import kr.cosine.library.exception.TestException
 import kr.cosine.library.kommand.KommandExecutor
 import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
 import kr.cosine.library.kommand.annotation.SubKommand
 import org.bukkit.entity.Player
 
-@Kommand("처벌")
+@Kommand("처벌", BukkitException::class)
 class TestCommand(
-    private val plugin: kr.cosine.library.CosineLibrary
+    private val plugin: CosineLibrary
 ) : KommandExecutor(plugin) {
 
     @BukkitAsync
     @SubKommand("제재", priority = 1)
     fun test(player: Player, target: Player, code: Int) {
         player.sendMessage("입력: ${target.name}, $code")
+        throw TestException("test2")
+    }
+
+    private fun test2() {
+        throw TestException("test")
     }
 
     @SubKommand("테스트", isOp = true, priority = 2)
     suspend fun test2(player: Player, target: Player, code: String, code2: String, code3: String, vararg args: String) {
+        test2()
         delay(1000)
+        test2()
         player.sendMessage("입력: ${target.name}, $code, $code2, $code3, ${args.toList()}")
     }
 

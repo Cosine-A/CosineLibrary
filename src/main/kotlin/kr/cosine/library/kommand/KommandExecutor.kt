@@ -1,6 +1,7 @@
 package kr.cosine.library.kommand
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.launch
 import kr.cosine.library.extension.*
 import kr.cosine.library.kommand.annotation.BukkitAsync
 import kr.cosine.library.kommand.annotation.Kommand
@@ -18,6 +19,7 @@ import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.command.*
 import org.bukkit.entity.Player
+import java.lang.reflect.InvocationTargetException
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -25,13 +27,10 @@ import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 abstract class KommandExecutor(
-    private val plugin: BukkitPlugin
-) : CommandExecutor, TabCompleter, CoroutineScope {
+    private val plugin: BukkitPlugin,
+) : CommandExecutor, TabCompleter {
 
-    override val coroutineContext: CoroutineContext
-        get() = CoroutineName("${this::class.simpleName}") + Dispatchers.IO
-
-    private var exception: KClass<Exception>
+    private var exception: KClass<out Exception>
 
     private var pluginCommand: PluginCommand
 
@@ -282,16 +281,56 @@ abstract class KommandExecutor(
             println("parameters: ${parameters.map { if (it is Array<*>) it.toList() else it.toString() }}")
             if (function.isSuspend) {
                 println("function call suspend")
-                launch { function.callSuspend(this@KommandExecutor, sender, *parameters.toTypedArray()) }
+                plugin.launch(CoroutineExceptionHandler { _, e ->
+                    handleException(sender, language, e)
+                }) {
+                    suspendCatching(sender, language) {
+                        function.callSuspend(this@KommandExecutor, sender, *parameters.toTypedArray())
+                    }
+                }
                 return
             }
             if (isBukkitAsync) {
                 println("function call bukkit async")
-                plugin.async { function.call(this@KommandExecutor, sender, *parameters.toTypedArray()) }
+                plugin.async {
+                    catching(sender, language) {
+                        function.call(this@KommandExecutor, sender, *parameters.toTypedArray())
+                    }
+                }
                 return
             }
             println("function call")
-            function.call(this@KommandExecutor, sender, *parameters.toTypedArray())
+            catching(sender, language) {
+                function.call(this@KommandExecutor, sender, *parameters.toTypedArray())
+            }
+        }
+    }
+
+    private fun catching(sender: CommandSender, language: Language, actionFunction: () -> Unit) {
+        try {
+            actionFunction()
+        } catch (e: InvocationTargetException) {
+            handleException(sender, language, e.cause)
+        }
+    }
+
+    private suspend fun suspendCatching(sender: CommandSender, language: Language, actionFunction: suspend () -> Unit) {
+        try {
+            actionFunction()
+        } catch (e: InvocationTargetException) {
+            handleException(sender, language, e.cause)
+        }
+    }
+
+    private fun handleException(sender: CommandSender, language: Language, cause: Throwable?) {
+        if (cause != null && cause::class.isSubclassOf(exception)) {
+            val message = cause.message
+            if (message != null) {
+                val errorMessage = language.getMessage(message)
+                sender.sendMessage(errorMessage)
+            }
+        } else {
+            cause?.printStackTrace()
         }
     }
 }

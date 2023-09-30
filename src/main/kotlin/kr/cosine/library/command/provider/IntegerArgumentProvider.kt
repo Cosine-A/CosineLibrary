@@ -7,7 +7,7 @@ import org.bukkit.Location
 import org.bukkit.command.CommandSender
 
 class IntegerArgumentProvider(
-    private val plugin: kr.cosine.library.CosineLibrary
+    private val plugin: CosineLibrary
 ) : ArgumentProvider<Int> {
 
     override fun cast(sender: CommandSender, argument: String?): Int {
